@@ -71,9 +71,9 @@ invoice_template = '''
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <style>
     :root {
-      --primary-color: #6366f1;
-      --secondary-color: #8b5cf6;
-      --accent-color: #06b6d4;
+      --primary-color: #76ccd0;
+      --secondary-color: #76ccd0;
+      --accent-color: #76ccd0;
       --light-bg: #f8fafc;
       --card-bg: #ffffff;
       --text-primary: #1e293b;
@@ -1016,9 +1016,9 @@ admin_template = '''
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <style>
     :root {
-      --primary-color: #6366f1;
-      --secondary-color: #8b5cf6;
-      --accent-color: #06b6d4;
+      --primary-color: #76ccd0;
+      --secondary-color: #76ccd0;
+      --accent-color: #76ccd0;
       --success-color: #10b981;
       --warning-color: #f59e0b;
       --danger-color: #ef4444;
@@ -1450,186 +1450,145 @@ def create_invoice_pdf(data):
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
-    
-    # Colors
-    primary_color = colors.HexColor('#6366f1')
-    secondary_color = colors.HexColor('#8b5cf6')
-    light_bg = colors.HexColor('#f8fafc')
-    border_color = colors.HexColor('#e2e8f0')
-    
-    # Header with gradient
-    c.setFillColor(primary_color)
-    c.rect(0, height - 100, width, 100, fill=True, stroke=False)
-    c.setFillColor(secondary_color)
-    c.rect(0, height - 100, width, 30, fill=True, stroke=False)
-    
-    # Logo and company info
-    c.setFillColor(colors.white)
-    c.setFont("Helvetica-Bold", 22)
-    c.drawString(50, height - 50, "SA PHYSIO CARE")
-    c.setFont("Helvetica", 12)
-    c.drawString(50, height - 70, "RESTORE. RELIEVE. REVITALISE.")
-    
-    # Invoice title
-    c.setFont("Helvetica-Bold", 28)
-    c.drawRightString(width - 50, height - 60, "INVOICE")
-    
-    # Contact info
+
+    # Theme Colors
+    theme_color = colors.HexColor('#76ccd0')
+    light_text = colors.white
+    border_color = colors.HexColor('#dddddd')
+    dark_text = colors.HexColor('#333333')
+
+    # Header Background
+    c.setFillColor(theme_color)
+    c.rect(0, height - 120, width, 120, fill=True, stroke=False)
+
+    # Logo
+    try:
+        logo_path = os.path.join('static', 'sa_logo.png')
+        if os.path.exists(logo_path):
+            c.drawImage(logo_path, 40, height - 100, width=60, height=60, preserveAspectRatio=True, mask='auto')
+    except:
+        pass
+
+    # Clinic Info (top-right)
+    c.setFillColor(light_text)
+    c.setFont("Helvetica-Bold", 18)
+    c.drawRightString(width - 40, height - 50, "SA PHYSIO CARE")
+
     c.setFont("Helvetica", 9)
-    contact_info = [
+    contact_lines = [
         "Suvarna Avilala - Specialist Physiotherapist",
         "01296 580770 / 07438 326185",
         "info@saphysiocare.co.uk",
-        "51 Savernake Road, Aylesbury, Buckinghamshire, HP19 9XP"
+        "51 Savernake Road, Aylesbury, HP19 9XP"
     ]
-    for i, line in enumerate(contact_info):
-        c.drawString(50, height - 85 - (i * 12), line)
-    
-    # Invoice details box
-    c.setFillColor(light_bg)
+    for i, line in enumerate(contact_lines):
+        c.drawRightString(width - 40, height - 65 - (i * 12), line)
+
+    # Invoice Title
+    c.setFillColor(dark_text)
+    c.setFont("Helvetica-Bold", 20)
+    c.drawString(40, height - 150, "INVOICE")
+
+    # Bill To
+    y = height - 170
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(40, y, "BILL TO:")
+    c.setFont("Helvetica", 10)
+    y -= 15
+    c.drawString(40, y, data.get("patient_name", ""))
+    y -= 15
+    c.drawString(40, y, data.get("address", ""))
+    y -= 30
+
+    # Invoice Meta Info with reduced horizontal spacing
+    meta_y = height - 150
+    line_gap = 14
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(width - 200, meta_y, "INVOICE:")
+    c.drawString(width - 200, meta_y - line_gap, "DATE:")
+    c.drawString(width - 200, meta_y - 2 * line_gap, "DUE DATE:")
+
+    c.setFont("Helvetica", 10)
+    c.drawString(width - 130, meta_y, data.get('invoice_no', ''))
+    c.drawString(width - 130, meta_y - line_gap, data.get('invoice_date', ''))
+    c.drawString(width - 130, meta_y - 2 * line_gap, data.get('due_date', ''))
+
+    # Table Headers
+    y = height - 220
     c.setStrokeColor(border_color)
-    c.rect(40, height - 180, width - 80, 40, fill=True, stroke=True)
-    c.setFillColor(colors.black)
-    
-    details_y = height - 160
+    c.setLineWidth(0.5)
+    c.line(40, y, width - 40, y)
+
+    y -= 15
     c.setFont("Helvetica-Bold", 10)
-    c.drawString(50, details_y, "INVOICE NUMBER")
-    c.drawString(200, details_y, "INVOICE DATE")
-    c.drawString(350, details_y, "DUE DATE")
-    
+    c.setFillColor(dark_text)
+    c.drawString(40, y, "DESCRIPTION")
+    c.drawRightString(width - 220, y, "QTY")
+    c.drawRightString(width - 150, y, "UNIT PRICE")
+    c.drawRightString(width - 40, y, "TOTAL")
+
+    y -= 10
+    c.line(40, y, width - 40, y)
+
+    # Table Rows
     c.setFont("Helvetica", 10)
-    c.drawString(50, details_y - 18, data.get('invoice_no', ''))
-    c.drawString(200, details_y - 18, data.get('invoice_date', ''))
-    c.drawString(350, details_y - 18, data.get('due_date', ''))
-    
-    # Patient information
-    c.setFillColor(colors.black)
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(50, height - 220, "PATIENT INFORMATION")
-    c.setFont("Helvetica", 10)
-    
-    patient_info = [
-        f"Name: {data.get('patient_name', '')}",
-        f"ID: {data.get('patient_id', '')}",
-        "Address:"
-    ]
-    address_lines = data.get('address', '').split('\n') if data.get('address') else []
-    
-    y_pos = height - 240
-    for i, line in enumerate(patient_info):
-        c.drawString(50, y_pos - (i * 15), line)
-    
-    y_pos -= 45
-    for i, line in enumerate(address_lines):
-        c.drawString(65, y_pos - (i * 15), line)
-    
-    # Treatment information
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(width - 200, height - 220, "TREATMENT CATEGORY")
-    c.setFont("Helvetica", 10)
-    c.drawString(width - 200, height - 240, data.get('treatment_category', ''))
-    
-    # Items table
-    table_top = height - 300
-    col_widths = [300, 60, 80, 80]  # Adjusted widths for better alignment
-    headers = ["Treatment Description", "Qty", "Unit Price (£)", "Total (£)"]
-    
-    # Table header
-    c.setFillColor(primary_color)
-    c.setStrokeColor(primary_color)
-    c.rect(40, table_top - 25, width - 80, 25, fill=True, stroke=True)
-    c.setFillColor(colors.white)
+    items = data.get("items", [])
+    for item in items:
+        y -= 18
+        if y < 100:
+            c.showPage()
+            y = height - 100
+
+        treatment = item.get("treatment", "")[:60]
+        qty = str(item.get("quantity", ""))
+        unit_price = f"{item.get('unit_price', 0):.2f}"
+        total = f"{item.get('total', 0):.2f}"
+
+        c.drawString(40, y, treatment)
+        c.drawRightString(width - 220, y, qty)
+        c.drawRightString(width - 150, y, unit_price)
+        c.drawRightString(width - 40, y, total)
+
+    # Notes Section
+    y -= 40
     c.setFont("Helvetica-Bold", 10)
-    
-    x_pos = 45
-    for i, header in enumerate(headers):
-        if i == 0:  # Left-align first column
-            c.drawString(x_pos, table_top - 18, header)
-        else:  # Center-align other columns
-            c.drawCentredString(x_pos + (col_widths[i] / 2), table_top - 18, header)
-        x_pos += col_widths[i]
-    
-    # Table rows
-    items = data.get('items', [])
-    c.setFillColor(colors.black)
-    c.setFont("Helvetica", 10)
-    row_height = 20
-    
-    for i, item in enumerate(items):
-        y_pos = table_top - 50 - (i * row_height)
-        
-        # Alternate row colors
-        if i % 2 == 0:
-            c.setFillColor(light_bg)
-            c.rect(40, y_pos - 5, width - 80, row_height, fill=True, stroke=False)
-            c.setFillColor(colors.black)
-        
-        # Treatment description (left-aligned)
-        treatment = item.get('treatment', '')
-        if len(treatment) > 60:  # Truncate long treatments
-            treatment = treatment[:57] + "..."
-        c.drawString(45, y_pos, treatment)
-        
-        # Quantity (centered)
-        c.drawCentredString(40 + col_widths[0] + (col_widths[1] / 2), y_pos, str(item.get('quantity', 1)))
-        
-        # Unit Price (right-aligned)
-        c.drawRightString(40 + col_widths[0] + col_widths[1] + col_widths[2] - 10, y_pos, f"{item.get('unit_price', 0):.2f}")
-        
-        # Total (right-aligned)
-        c.drawRightString(width - 45, y_pos, f"{item.get('total', 0):.2f}")
-        
-        # Row separator
-        c.setStrokeColor(border_color)
-        c.line(40, y_pos - 10, width - 40, y_pos - 10)
-    
-    # Summary section
-    summary_top = table_top - 60 - (len(items) * row_height)
-    if summary_top < 150:
-        c.showPage()
-        summary_top = height - 50
-    
-    # Notes section
-    c.setFont("Helvetica-Bold", 10)
-    c.drawString(50, summary_top, "NOTES & TERMS")
+    c.drawString(40, y, "NOTES")
     c.setFont("Helvetica", 9)
-    
-    notes = data.get('notes', '')
-    if notes:
-        text = c.beginText(50, summary_top - 20)
-        text.setFont("Helvetica", 9)
-        for line in notes.split('\n'):
-            text.textLine(line[:100])  # Limit line length
-        c.drawText(text)
-    
-    # Totals section
-    c.setFillColor(light_bg)
-    c.setStrokeColor(border_color)
-    c.rect(width - 220, summary_top - 90, 180, 80, fill=True, stroke=True)
-    c.setFillColor(colors.black)
-    
+    y -= 15
+    for line in data.get("notes", "").split('\n'):
+        c.drawString(40, y, line[:100])
+        y -= 12
+
+    # Totals Box (bottom-right)
+    y = 130
+    c.setFillColor(theme_color)
+    c.rect(width - 200, y, 160, 90, fill=True, stroke=False)
+
+    c.setFillColor(light_text)
     c.setFont("Helvetica", 10)
-    c.drawString(width - 210, summary_top - 25, "Subtotal:")
-    c.drawString(width - 210, summary_top - 45, "VAT (20%):")
+    c.drawString(width - 190, y + 65, "Subtotal:")
+    c.drawString(width - 190, y + 45, "VAT (20%):")
     c.setFont("Helvetica-Bold", 12)
-    c.drawString(width - 210, summary_top - 70, "Total Amount Due:")
-    
+    c.drawString(width - 190, y + 20, "TOTAL:")
+
     c.setFont("Helvetica", 10)
-    c.drawRightString(width - 40, summary_top - 25, f"£{data.get('subtotal', 0):.2f}")
-    c.drawRightString(width - 40, summary_top - 45, f"£{data.get('vat', 0):.2f}")
-    c.setFont("Helvetica-Bold", 12)
-    c.drawRightString(width - 40, summary_top - 70, f"£{data.get('grand_total', 0):.2f}")
-    
+    c.drawRightString(width - 50, y + 65, f"£{data.get('subtotal', 0):.2f}")
+    c.drawRightString(width - 50, y + 45, f"£{data.get('vat', 0):.2f}")
+    c.setFont("Helvetica-Bold", 14)
+    c.drawRightString(width - 50, y + 20, f"£{data.get('grand_total', 0):.2f}")
+
     # Footer
     c.setFont("Helvetica", 8)
     c.setFillColor(colors.grey)
-    c.drawCentredString(width / 2, 30, "SA Physio Care | 51 Savernake Road, Aylesbury, Buckinghamshire, HP19 9XP")
+    c.drawCentredString(width / 2, 30, "SA Physio Care | 51 Savernake Road, HP19 9XP")
     c.drawCentredString(width / 2, 20, "Tel: 01296 580770 / 07438 326185 | Email: info@saphysiocare.co.uk")
-    c.drawCentredString(width / 2, 10, f"Invoice generated on {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    
+    c.drawCentredString(width / 2, 10, f"Generated on {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+
     c.save()
     buffer.seek(0)
     return buffer
+
+
 
 @app.route('/generate-pdf', methods=['POST'])
 def generate_pdf():
