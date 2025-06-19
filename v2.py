@@ -1472,7 +1472,7 @@ def create_invoice_pdf(data):
     # Clinic Info (top-right)
     c.setFillColor(light_text)
     c.setFont("Helvetica-Bold", 18)
-    c.drawRightString(width - 40, height - 50, "SA PHYSIO CARE")
+    c.drawRightString(width - 40, height - 50, "SA PHYSIO CARE LTD")
 
     c.setFont("Helvetica", 9)
     contact_lines = [
